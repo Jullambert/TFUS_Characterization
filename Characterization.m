@@ -14,9 +14,9 @@ clear all
 %% 1: Import of the parameters
 % Parameters for the analysis are stored in an Excel file
 Params=readtable('D:\data\jlambert\TFUS_Mesures_Welcome\AnalysisParameters.xlsx');
+DfN = 1; %  the row number to analyze which correspond to a file
 disp('1 : Parameters imported')
-%% Initialization of the variables
-DfN = 3; %  the row number to analyze which correspond to a file
+%% 2: Initialization of the variables
 %Stimulation parameters
 UltrasoundBurstPeriod = 1/Params.UltrasoundBurstFrequency(DfN);
 ToneBurstDuration = Params.NumberOfCycles(DfN) * UltrasoundBurstPeriod ;% [s]
@@ -108,7 +108,7 @@ if ~Params.CalibrationPrototype(DfN)
     HydrophoneVoltageBurstVect_Complex = zeros(length(Xvector),length(Yvector),length(Freq_Axis)); 
 end
 disp('2 : Initialization of the variables done')
-%% Import data to analyze
+%% 3: Import data to analyze
 if Params.CalibrationPrototype(DfN)
     if isempty(strfind(Params.DataFilename{DfN},'.mat')) % if reference to a folder that was not yet analyzed
         dir(strcat(Params.DataFilename{DfN},'*.tdms'))
@@ -292,6 +292,7 @@ else
             FunctionGenVoltage_Corr_Filtered(x,y,:)= filtfilt(B, A,FunctionGenVoltage_Corr(x,y,:));
             HydrophoneVoltage_Corr_Filtered(x,y,:)= filtfilt(B, A,HydrophoneVoltage_Corr(x,y,:));
             FunctionGenVoltagevect = squeeze(FunctionGenVoltage_Corr_Filtered(x,y,10000:end));
+            % Detection method 1
             [ValPic, NumCycle] = findpeaks(FunctionGenVoltagevect,'MINPEAKHEIGHT',Params.Threshold_FuncGen(DfN));
             FunctionGenPeakValue(x,y,:) = ValPic(1);
             FunctionGenPeakCycle(x,y,:) = NumCycle(1)+9999;
@@ -302,6 +303,16 @@ else
             HydrophonePeakCycle(x,y,:) = NumCycle2(1)+FunctionGenPeakCycle(x,y,:)-1;
             %Calculs du delta en nombre de cycles entre l'onde émise et reçue
             DeltaFunctionGenHydrophone(x,y,:) = HydrophonePeakCycle(x,y,:) - FunctionGenPeakCycle(x,y,:);
+            
+%             %Detection method 2
+%             [FunctionGenR,FunctionGenLT,FunctionGenUT,FunctionGenLL,FunctionGenUL] = risetime(squeeze(FunctionGenVoltage_Corr_Filtered(x,y,:)),squeeze(FunctionGenTimeVector(x,y,:)));%Params.SamplingFrequency(DfN)
+%             [FunctionGenR2,FunctionGenLT2,FunctionGenUT2,FunctionGenLL2,FunctionGenUL2] = falltime(squeeze(FunctionGenVoltage_Corr_Filtered(x,y,:)),squeeze(FunctionGenTimeVector(x,y,:)));
+%
+% Second method aimed to detetc precisely the onset and offset of the whole
+% burst and not to cut the burst according to the stimulation paramters set
+% on the function generator. So to be more close to ebaluate exposure indices 
+% with the true burst generated and so sent to the targeted brain area. 
+%!!! Unnecessary !!! Compuatation performed with all signal are lower than with burst which are lower than with Isppa effective             
         end
     end
 figure
@@ -310,7 +321,7 @@ end
 
 disp('4 : Data were filtered, offset corrected and peak of burst onset were detected')
 %% 5 :FFT analysis
-if ~Params.CalibrationPrototype
+if ~Params.CalibrationPrototype(DfN)
     for x=1:size(v,1)
         for y=1:size(v,2)
             % Emis <=> T
@@ -351,10 +362,10 @@ if ~Params.CalibrationPrototype
     ComplexRatio = HydrophoneVoltageBurstVect_Complex./FunctionGenVoltageBurstVect_Complex;
 end
 if ~Params.CalibrationPrototype(DfN)
-    filename = strcat('DataFFT_',Params.SessionName(DfN),'_',num2str(Params.NumberOfCycles(DfN)),'Cyc','_',num2str(Params.VppFunGen(DfN)),'Vpp','_',num2str(Params.UltrasoundBurstFrequency(DfN)/1000),'kHz');
+    filename = strcat('DataFFT_',Params.SessionName(DfN),'_',num2str(Params.NumberOfCycles(DfN)),'Cyc','_',num2str(Params.VppFunGen(DfN)*10),'Vpp','_',num2str(Params.UltrasoundBurstFrequency(DfN)/1000),'kHz.mat');
     save(filename{1},'FunctionGenVoltageBurstCut','FunctionGenVoltageBurstVect_Complex','HydrophoneVoltageBurstCut','HydrophoneVoltageBurstVect_Complex',...
-        'Freq_Axis','NSamples','ComplexRatio');
-    clear FunctionGenVoltageBurstCut FunctionGenVoltageBurstVect_Complex HydrophoneVoltageBurstCut HydrophoneVoltageBurstVect_Complex Freq_Axis NSamples ComplexRatio
+        'Freq_Axis','NSamples','ComplexRatio','FunctionGenVoltageBurstVect_FFT','HydrophoneVoltageBurstVect_FFT');
+    clear FunctionGenVoltageBurstCut FunctionGenVoltageBurstVect_Complex HydrophoneVoltageBurstCut HydrophoneVoltageBurstVect_Complex Freq_Axis NSamples ComplexRatio FunctionGenVoltageBurstVect_FFT HydrophoneVoltageBurstVect_FFT
 end
 disp('5 : FFT analysis done, data saved')
 %% 6 : Calcul des différents paramètres nécessaires pour la caractérisation d'un champs d'ultrasons
@@ -399,24 +410,37 @@ else
             A(x,y,:) = size([InitBurst:EndBurst],2);
             BurstHydrophone(x,y,:) = ((HydrophoneVoltage_Corr(x,y,InitBurst:EndBurst)).*1000000)./Params.HydrophoneSensitivity(DfN); %% Attention facteur d'échelle % * 1000000 pour passer en µV /0.99 pour avoir des Pa
             TimeVector_BurstHydrophone(x,y,:) = FunctionGenTimeVector(x,y,InitBurst:EndBurst);
-            PeakPressure(x,y) = max(BurstHydrophone(x,y,20:end));
-            PtPPressure(x,y) = max(BurstHydrophone(x,y,20:end))-min(BurstHydrophone(x,y,20:end));
-            IpaEffective(x,y) = (PeakPressure(x,y,:)^2)/(2*Params.Density(DfN)*Params.SoundVelocity(DfN));    
+            PeakPressure(x,y) = max(BurstHydrophone(x,y,round(length(BurstHydrophone(x,y,:))/2):end));
+%             PtPPressure(x,y) = max(BurstHydrophone(x,y,round(length(BurstHydrophone(x,y,:))/2):end))-min(BurstHydrophone(x,y,round(length(BurstHydrophone(x,y,:))/2)));
+            PtPPressure(x,y) = max(BurstHydrophone(x,y,round(length(BurstHydrophone(x,y,:))/2):end))-min(BurstHydrophone(x,y,round(length(BurstHydrophone(x,y,:))/2):end));
+            IpaEffective(x,y) = (PeakPressure(x,y)^2)/(2*Params.Density(DfN)*Params.SoundVelocity(DfN));    
        %[Pi_Complet(x,y,:),Isppa_Complet(x,y,:),Ispta_Complet(x,y,:),mechanicalIndex_Complet(x,y,:)] = ultrasoundParameters((Tension_Hydrophone_Corr_Filtre_Rot15(x,y,:).*1000000)./0.99,VecteurTemps_FunctionGen_5Cycles_Rot15(x,y,:),Density,SoundVelocity,UltrasoundBurstFrequency,DutyCycle);  
             [PII(x,y,:),Ipa(x,y,:),Ita(x,y,:),MI(x,y,:), TI(x,y,:)] = ultrasoundParameters(BurstHydrophone(x,y,:),TimeVector_BurstHydrophone(x,y,:),Params.Density(DfN),Params.SoundVelocity(DfN),Params.UltrasoundBurstFrequency(DfN),DutyCycle,Params.SamplingFrequency(DfN),Params.SonicationDuration(DfN));
         end
     end
-    if Params.SkullBone
+    if Params.SkullBone(DfN)
         IsppaEffective = max(max(IpaEffective(:,1:size(IpaEffective,2)-5)));
-        IpaEffectiveNormalized = IpaEffective./IsppaEffective;    
+        IpaEffectiveNormalized = IpaEffective./IsppaEffective;
+        PtPPressureNormalized = PtPPressure./max(max(PtPPressure(:,1:size(PtPPressure,2)-5)));
     else
         IsppaEffective = max(max(IpaEffective(:,1:size(IpaEffective,2)-10)));
         IpaEffectiveNormalized = IpaEffective./IsppaEffective;
+        PtPPressureNormalized = PtPPressure./max(max(PtPPressure(:,1:size(PtPPressure,2)-10)));
     end
     [IpaEffectiveNormalizedXcoord, IpaEffectiveNormalizedYcoord] = find(IpaEffectiveNormalized==1);
+    [PtPPressureNormalizedXcoord, PtPPressureNormalizedYcoord] = find(PtPPressureNormalized==1);
+%     for x=1:size(v,1)
+%         for y=1:size(v,2)
+%            if IpaEffectiveNormalized(x,y) >= 0.5
+%                FWHM(x,y) = 1;
+%            else
+%                FWHM(x,y) = 0;
+%            end
+%         end
+%     end
     for x=1:size(v,1)
         for y=1:size(v,2)
-           if IpaEffectiveNormalized(x,y) >= 0.5
+           if PtPPressureNormalized(x,y) >= 0.5
                FWHM(x,y) = 1;
            else
                FWHM(x,y) = 0;
@@ -473,7 +497,7 @@ else
 
     % Calcul de la position max pour chacun des paramètres afin de définir la
     % distance focale
-    if Params.SkullBone
+    if Params.SkullBone(DfN)
         [PeakPressureXcoord, PeakPressureYcoord] = find(PeakPressure==max(max(PeakPressure(:,1:end-5))));
         disp(['La valeur max du PeakPressure est de : ' num2str(max(max(PeakPressure(:,1:end-5)))) ' et est postionné au point : ' num2str(PeakPressureXcoord) ' ' num2str(PeakPressureYcoord)])
         [IsppaEffXcoord, IsppaEffYcoord] = find(IpaEffective==max(max(IpaEffective(:,1:end-5))));
@@ -502,15 +526,12 @@ else
     end
 
     FocalPointX=ceil(length(Xvector)/2)-PeakPressureXcoord;
-    FocalPointY=length(Yvector)-PeakPressureYcoord+Params.DistanceHydroTr;
+    FocalPointY=length(Yvector)-PeakPressureYcoord+Params.DistanceHydroTr(DfN);
     IpaEffective = IpaEffective/10000;
     Ipa = Ipa/10000; %Divided by 10000 to convert data from W/m² to W/cm²
     Ita = Ita/10000;
 end
-
-
 disp('6 : Computation of the exposure indices done')
-
 %%
 [a,b,c]=xlsread('D:\data\jlambert\TFUS_Mesures_Welcome\AnalysisParameters.xlsx','Output');
 if Params.CalibrationPrototype(DfN)
@@ -522,31 +543,60 @@ if Params.CalibrationPrototype(DfN)
     xlswrite('D:\data\jlambert\TFUS_Mesures_Welcome\AnalysisParameters.xlsx',Results,'Output',Range)
     end
 else
-    Results={Params.DataFilename{DfN},max(max(PeakPressure(:,1:end-10))),PeakPressureXcoord, PeakPressureYcoord,max(max(IpaEffective(:,1:end-10))),...
-        IsppaEffXcoord, IsppaEffYcoord,max(max(Ipa(:,1:end-10))),IsppaXcoord, IsppaYcoord,max(max(Ita(:,1:end-10))),IsptaXcoord, ...
-        IsptaYcoord,max(max(MI(:,1:end-10))),MIXcoord, MIYcoord,FocalPointX,FocalPointY};
-    Range = ['A' num2str(size(c,1)+1)];
-    xlswrite('D:\data\jlambert\TFUS_Mesures_Welcome\AnalysisParameters.xlsx',Results,'Output',Range)
+    if Params.Skullbone(DfN)
+        Results={Params.DataFilename{DfN},max(max(PeakPressure(:,1:end-5))),PeakPressureXcoord, PeakPressureYcoord,max(max(IpaEffective(:,1:end-5))),...
+            IsppaEffXcoord, IsppaEffYcoord,max(max(Ipa(:,1:end-5))),IsppaXcoord, IsppaYcoord,max(max(Ita(:,1:end-5))),IsptaXcoord, ...
+            IsptaYcoord,max(max(MI(:,1:end-5))),MIXcoord, MIYcoord,FocalPointX,FocalPointY};
+        Range = ['A' num2str(size(c,1)+1)];
+        xlswrite('D:\data\jlambert\TFUS_Mesures_Welcome\AnalysisParameters.xlsx',Results,'Output',Range)
+    else
+        Results={Params.DataFilename{DfN},max(max(PeakPressure(:,1:end-10))),PeakPressureXcoord, PeakPressureYcoord,max(max(IpaEffective(:,1:end-10))),...
+            IsppaEffXcoord, IsppaEffYcoord,max(max(Ipa(:,1:end-10))),IsppaXcoord, IsppaYcoord,max(max(Ita(:,1:end-10))),IsptaXcoord, ...
+            IsptaYcoord,max(max(MI(:,1:end-10))),MIXcoord, MIYcoord,FocalPointX,FocalPointY};
+        Range = ['A' num2str(size(c,1)+1)];
+        xlswrite('D:\data\jlambert\TFUS_Mesures_Welcome\AnalysisParameters.xlsx',Results,'Output',Range)
+    end
 end
 disp('7: Data saved in Excel file')
 
 if Params.CalibrationPrototype(DfN)
-       filename = strcat('DataCharacterization_',Params.SessionName(DfN),'_',num2str(Params.NumberOfCycles(DfN)),'Cyc','_',num2str(Params.VppFunGen(DfN)),'Vpp','_',num2str(Params.UltrasoundBurstFrequency(DfN)/1000),'kHz');
+       filename = strcat('DataCharacterisation_',Params.SessionName(DfN),'_',num2str(Params.NumberOfCycles(DfN)),'Cyc','_',num2str(Params.VppFunGen(DfN)),'Vpp','_',num2str(Params.UltrasoundBurstFrequency(DfN)/1000),'kHz');
          save(filename{1},'FunctionGenVoltage','HydrophoneVoltage','FunctionGenTimeVector',...
         'BurstHydrophone','HydrophonePeakValue','HydrophonePeakCycle',...
-        'PeakPressure','IpaEffective','Ipa','Ita','MI','TI','PII','Params','FocalPointX','FocalPointY'); 
+        'PeakPressure','IpaEffective','Ipa','Ita','MI','TI','PII','Params',...
+        'FocalPointX','FocalPointY'); 
 else
-    filename = strcat('DataCharacterization_',Params.SessionName(DfN),'_',num2str(Params.NumberOfCycles(DfN)),'Cyc','_',num2str(Params.VppFunGen(DfN)),'Vpp','_',num2str(Params.UltrasoundBurstFrequency(DfN)/1000),'kHz');
+    filename = strcat('DataCharacterisation_',Params.SessionName(DfN),'_',num2str(Params.NumberOfCycles(DfN)),'Cyc','_',num2str(Params.VppFunGen(DfN)*10),'Vpp','_',num2str(Params.UltrasoundBurstFrequency(DfN)/1000),'kHz.mat');
     save(filename{1},'FunctionGenVoltage','HydrophoneVoltage','FunctionGenTimeVector','FilenameMatrix',...
         'BurstHydrophone','FunctionGenPeakValue','FunctionGenPeakCycle','HydrophonePeakValue','HydrophonePeakCycle',...
-        'PeakPressure','IpaEffective','Ipa','Ita','MI','TI','PII','FWHM','Params','FocalPointX','FocalPointY');
+        'PeakPressure','IpaEffective','Ipa','Ita','MI','TI','PII','FWHM','Params','FocalPointX','FocalPointY','PtPPressureNormalized');
 end
-if ~Params.CalibrationPrototype(DfN)
-    filename = strcat('DataFFT_',Params.SessionName(DfN),'_',num2str(Params.NumberOfCycles(DfN)),'Cyc','_',num2str(Params.VppFunGen(DfN)),'Vpp','_',num2str(Params.UltrasoundBurstFrequency(DfN)/1000),'kHz');
-    save(filename{1},'FunctionGenVoltageBurstCut','FunctionGenVoltageBurstVect_Complex','HydrophoneVoltageBurstCut','HydrophoneVoltageBurstVect_Complex',...
-        'Freq_Axis','NSamples','ComplexRatio');
-    clear FunctionGenVoltageBurstCut FunctionGenVoltageBurstVect_Complex HydrophoneVoltageBurstCut HydrophoneVoltageBurstVect_Complex Freq_Axis NSamples ComplexRatio
-end
+
 disp('Data saved in mat file')
+%%
+
+
+%%
+
+%%
+figure
+subplot(2,1,1)
+plot(Freq_Axis,squeeze(abs(FunctionGenVoltageBurstVect_FFT(x,y,:))))
+
+subplot(2,1,2)
+plot(T,squeeze(FunctionGenVoltageBurstCutvect))
+hold on
+plot(T,squeeze(real(FunctionGenVoltageBurstVect_Complex(x,y,:))),'r')
+plot(T,squeeze(imag(FunctionGenVoltageBurstVect_Complex(x,y,:))),'k')
+
+figure
+subplot(2,1,1)
+plot(Freq_Axis,squeeze(abs(HydrophoneVoltageBurstVect_FFT(x,y,:))))
+
+subplot(2,1,2)
+plot(T,squeeze(FunctionGenVoltageBurstCutvect))
+hold on
+plot(T,squeeze(real(HydrophoneVoltageBurstVect_Complex(x,y,:))),'r')
+plot(T,squeeze(imag(HydrophoneVoltageBurstVect_Complex(x,y,:))),'k')
 
 
