@@ -1,12 +1,12 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Analyse des données des acquises lors des mesures réalisées en WELCOME
+% Analyse des donnÃ©es des acquises lors des mesures rÃ©alisÃ©es en WELCOME
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% ! Tous les fichiers à analyser doivent se trouver dans un dossier qui lui même se trouve dans le dossier Tests_Setup_Welcome à l'emplacement E: 
-% Ce script réalise les opérations uivantes :
-%           1. Création de constantes et préallocations mémoire de
+% ! Tous les fichiers Ã  analyser doivent se trouver dans un dossier qui lui mÃªme se trouve dans le dossier Tests_Setup_Welcome Ã  l'emplacement E: 
+% Ce script rÃ©alise les opÃ©rations uivantes :
+%           1. CrÃ©ation de constantes et prÃ©allocations mÃ©moire de
 %           variables
 %           2. Import et remise dans l'ordre de la liste des fichiers existant dans le dossier
-%           pointer lors de l'apparition de la fenêtre prévue à cet effet.
+%           pointer lors de l'apparition de la fenÃªtre prÃ©vue Ã  cet effet.
 % 
 
 clc
@@ -36,7 +36,7 @@ if ~Params.CalibrationPrototype(DfN)
             s=s+1;
         end;
     end;
-    % Boucle utilisée afin de respecter le schema de déplacement "en snake" de la table
+    % Boucle utilisÃ©e afin de respecter le schema de dÃ©placement "en snake" de la table
     % x-y
     for y=2:2:length(Yvector)%YTableEnd;
         v(:,y)=flip(v(:,y));
@@ -45,8 +45,8 @@ if ~Params.CalibrationPrototype(DfN)
     %  FFT Parameters
     NSamples = 2^14;
     T= [0:(NSamples-1)]/Params.SamplingFrequency(DfN);
-    Freq_Axis = (-Params.SamplingFrequency(DfN)/2)+[0:NSamples-1]/NSamples*Params.SamplingFrequency(DfN); % Permet de créer un vecteur qui va de -fs/2 à 1 echnatillon avant Fs/2
-    Haar = (-1).^([0:NSamples-1]); % permet de recentrer les données en 0
+    Freq_Axis = (-Params.SamplingFrequency(DfN)/2)+[0:NSamples-1]/NSamples*Params.SamplingFrequency(DfN); % Permet de crÃ©er un vecteur qui va de -fs/2 Ã  1 echnatillon avant Fs/2
+    Haar = (-1).^([0:NSamples-1]); % permet de recentrer les donnÃ©es en 0
     Haar = Haar';
     IndexFreqInterest = round(Params.UltrasoundBurstFrequency(DfN)/Params.SamplingFrequency(DfN)*NSamples+NSamples/2+1);
 
@@ -121,7 +121,7 @@ if Params.CalibrationPrototype(DfN)
             filename = fullfile(Params.DataFilename{DfN},DataFilesName(i).name);
             NameFile{i,1} = filename;
         end;
-        % Boucle pour trier par ordre numérique des différents "Steps" de mesure les fichiers contenus dans le dossier pointer par RootDir
+        % Boucle pour trier par ordre numÃ©rique des diffÃ©rents "Steps" de mesure les fichiers contenus dans le dossier pointer par RootDir
         for ii=1:length(DataFilesName)
             st=NameFile{ii};
             idx=strfind(st,'Num_Step_')+9;
@@ -186,7 +186,7 @@ else
             filename = fullfile(Params.DataFilename{DfN},DataFilesName(i).name);
             NameFile{i,1} = filename;
         end;
-        % Boucle pour trier par ordre numérique des différents "Steps" de mesure les fichiers contenus dans le dossier pointer par RootDir
+        % Boucle pour trier par ordre numÃ©rique des diffÃ©rents "Steps" de mesure les fichiers contenus dans le dossier pointer par RootDir
         for ii=1:length(DataFilesName)
             st=NameFile{ii};
             idx=strfind(st,'Num_Step_')+9;
@@ -214,11 +214,11 @@ else
                         content = fscanf(fid,'%c');
                             if Params.LV2015(DfN)
                                 A = importfile_2columns_LV2015(NameFile2{v(x,y)});
-                                DeltaT = str2num(content(strfind(content,'delta t')+7:strfind(content,'time')-1)) ;%% Recherche du delta T défini lors de l'acquisition de données 
+                                DeltaT = str2num(content(strfind(content,'delta t')+7:strfind(content,'time')-1)) ;%% Recherche du delta T dÃ©fini lors de l'acquisition de donnÃ©es 
                                  DeltaT=1/Params.SamplingFrequency(DfN);
                             else
                                 A = importfile_2columns(NameFile2{v(x,y)});
-                                DeltaT = str2num(content(strfind(content,'delta t')+7:strfind(content,'time')-1)) ;%% Recherche du delta T défini lors de l'acquisition de données 
+                                DeltaT = str2num(content(strfind(content,'delta t')+7:strfind(content,'time')-1)) ;%% Recherche du delta T dÃ©fini lors de l'acquisition de donnÃ©es 
                             end     
                         FunctionGenVoltage(x,y,1:length(A.Volt0)) = A.Volt0;
                         HydrophoneVoltage(x,y,1:length(A.Volt1)) = A.Volt1;
@@ -244,14 +244,14 @@ end
 
 cd('D:\data\jlambert\TFUS_Mesures_Welcome\ResultsAnalysis');
 disp('3 : Data imported')
-%% 4 : Calcul afin de 1. Réajuster par rapport à l'offset, 2. déterminer le temps et la valeur des premiers pics émis par le générateur de fonctions et 3.déterminer le temps et la valeur des premiers picsreçus par l'hydrophone
-% Filtrage des données
+%% 4 : Calcul afin de 1. RÃ©ajuster par rapport Ã  l'offset, 2. dÃ©terminer le temps et la valeur des premiers pics Ã©mis par le gÃ©nÃ©rateur de fonctions et 3.dÃ©terminer le temps et la valeur des premiers picsreÃ§us par l'hydrophone
+% Filtrage des donnÃ©es
 [B A] = butter(2,Params.CutOffFrequency(DfN)/(Params.SamplingFrequency(DfN)/2),'low');
-% Détection des premiers pics sur base des valeurs filtrées
+% DÃ©tection des premiers pics sur base des valeurs filtrÃ©es
 if Params.CalibrationPrototype(DfN)
     if Params.PXI(DfN)
         for j=1:size(HydrophoneVoltage,1)
-                    %Calcul de l'offset pour les deux séries de valeurs
+                    %Calcul de l'offset pour les deux sÃ©ries de valeurs
             FunctionGenOffset(j,:) = mean(FunctionGenVoltage(j,1:5000));
             HydrophoneOffset(j,:) = mean(HydrophoneVoltage(j,1:5000));
             %Correction de l'offset
@@ -265,11 +265,11 @@ if Params.CalibrationPrototype(DfN)
             FunctionGenPeakValue(j,:) = ValPic(1);
             FunctionGenPeakCycle(j,:) = NumCycle(1)+9999;
             %Calculs pour l'hydrophone
-            HydrophoneVoltagevect = squeeze(HydrophoneVoltage_Corr_Filtered(j,FunctionGenPeakCycle(j,:):end)); % .*1000000 pour obtenir des µV
+            HydrophoneVoltagevect = squeeze(HydrophoneVoltage_Corr_Filtered(j,FunctionGenPeakCycle(j,:):end)); % .*1000000 pour obtenir des ÂµV
             [ValPic2, NumCycle2] = findpeaks(HydrophoneVoltagevect,'MINPEAKHEIGHT',Params.Threshold_Hydrophone(DfN));
             HydrophonePeakValue(j,:) = ValPic2(1);
             HydrophonePeakCycle(j,:) = NumCycle2(1)+FunctionGenPeakCycle(j,:)-1;
-            %Calculs du delta en nombre de cycles entre l'onde émise et reçue
+            %Calculs du delta en nombre de cycles entre l'onde Ã©mise et reÃ§ue
             DeltaFunctionGenHydrophone(j,:) = HydrophonePeakCycle(j,:) - FunctionGenPeakCycle(j,:);
         end
     else    
@@ -277,19 +277,19 @@ if Params.CalibrationPrototype(DfN)
                 HydrophoneOffset(i,:) = mean(HydrophoneVoltage(i,2000:end));
                 HydrophoneVoltage_Corr(i,:)= HydrophoneVoltage(i,:) - HydrophoneOffset(i,:);
                 HydrophoneVoltage_Corr_Filtered(i,:)= filtfilt(B, A,HydrophoneVoltage_Corr(i,:));
-    %             HydrophoneVoltagevect = squeeze(HydrophoneVoltage_Corr_Filtered(i,FunctionGenPeakCycle(i,:):end)); % .*1000000 pour obtenir des µV
+    %             HydrophoneVoltagevect = squeeze(HydrophoneVoltage_Corr_Filtered(i,FunctionGenPeakCycle(i,:):end)); % .*1000000 pour obtenir des ÂµV
                 [ValPic2, NumCycle2] = findpeaks(squeeze(HydrophoneVoltage_Corr_Filtered(i,:)),'MINPEAKHEIGHT',Params.Threshold_Hydrophone(DfN));
                 HydrophonePeakValue(i,:) = ValPic2(1);
     %             HydrophonePeakCycle(i,:) = NumCycle2(1)+FunctionGenPeakCycle(i,:)-1;
                 HydrophonePeakCycle(i,:) = NumCycle2(1);
-                %Calculs du delta en nombre de cycles entre l'onde émise et reçue
+                %Calculs du delta en nombre de cycles entre l'onde Ã©mise et reÃ§ue
                 %DeltaFunctionGenHydrophone(i,:) = HydrophonePeakCycle(i,:) - FunctionGenPeakCycle(i,:);
         end
     end
 else
     for x=1:size(v,1)
         for y=1:size(v,2)
-            %Calcul de l'offset pour les deux séries de valeurs
+            %Calcul de l'offset pour les deux sÃ©ries de valeurs
             FunctionGenOffset(x,y,:) = mean(FunctionGenVoltage(x,y,1:5000));
             HydrophoneOffset(x,y,:) = mean(HydrophoneVoltage(x,y,1:5000));
             %Correction de l'offset
@@ -304,11 +304,11 @@ else
             FunctionGenPeakValue(x,y,:) = ValPic(1);
             FunctionGenPeakCycle(x,y,:) = NumCycle(1)+9999;
             %Calculs pour l'hydrophone
-            HydrophoneVoltagevect = squeeze(HydrophoneVoltage_Corr_Filtered(x,y,FunctionGenPeakCycle(x,y,:):end)); % .*1000000 pour obtenir des µV
+            HydrophoneVoltagevect = squeeze(HydrophoneVoltage_Corr_Filtered(x,y,FunctionGenPeakCycle(x,y,:):end)); % .*1000000 pour obtenir des ÂµV
             [ValPic2, NumCycle2] = findpeaks(HydrophoneVoltagevect,'MINPEAKHEIGHT',Params.Threshold_Hydrophone(DfN));
             HydrophonePeakValue(x,y,:) = ValPic2(1);
             HydrophonePeakCycle(x,y,:) = NumCycle2(1)+FunctionGenPeakCycle(x,y,:)-1;
-            %Calculs du delta en nombre de cycles entre l'onde émise et reçue
+            %Calculs du delta en nombre de cycles entre l'onde Ã©mise et reÃ§ue
             DeltaFunctionGenHydrophone(x,y,:) = HydrophonePeakCycle(x,y,:) - FunctionGenPeakCycle(x,y,:);
             
 %             %Detection method 2
@@ -332,37 +332,37 @@ if ~Params.CalibrationPrototype(DfN)
     for x=1:size(v,1)
         for y=1:size(v,2)
             % Emis <=> T
-            FunctionGenVoltageBurstCut(x,y,:) =  FunctionGenVoltage(x,y,(size(FunctionGenVoltage,3)-NSamples+1):end);% 3617 car on coupe les 3616 premiers échantillons car ce n'est que du
+            FunctionGenVoltageBurstCut(x,y,:) =  FunctionGenVoltage(x,y,(size(FunctionGenVoltage,3)-NSamples+1):end);% 3617 car on coupe les 3616 premiers Ã©chantillons car ce n'est que du
                 % bruit et on s'arrange pour garder une puissance de 2 comme longueur de
                 % vecteur!
             FunctionGenVoltageBurstCutvect = squeeze(FunctionGenVoltageBurstCut(x,y,:));
-            % +/- Implémentation d'une transformée de Hilbert:
+            % +/- ImplÃ©mentation d'une transformÃ©e de Hilbert:
             FunctionGenVoltageBurstVect_FFT(x,y,:) = (fft(FunctionGenVoltageBurstCutvect.*Haar)).*2;
-            FunctionGenVoltageBurstVect_FFT(x,y,1:(NSamples/2)+1)= FunctionGenVoltageBurstVect_FFT(x,y,1:(NSamples/2)+1).*0; % Partie freq neg = à 0
+            FunctionGenVoltageBurstVect_FFT(x,y,1:(NSamples/2)+1)= FunctionGenVoltageBurstVect_FFT(x,y,1:(NSamples/2)+1).*0; % Partie freq neg = Ã  0
 
-            FunctionGenVoltageBurstVect_Complex(x,y,:) = squeeze(ifft(FunctionGenVoltageBurstVect_FFT(x,y,:))).*Haar; % Vecteur imaginaire décalé dans le temps d'un quart de période = ok (cfr
+            FunctionGenVoltageBurstVect_Complex(x,y,:) = squeeze(ifft(FunctionGenVoltageBurstVect_FFT(x,y,:))).*Haar; % Vecteur imaginaire dÃ©calÃ© dans le temps d'un quart de pÃ©riode = ok (cfr
     % sin et cos quadrature) = phaseur de T
             %FFT_Burst_Tension_FunGen_Amp_Freq_Intererst(x,y) = FFT_vecteur_Burst_Tension_FunGen(x,y,IndexFreqInterest);
 
             %Recu <=> S
-            HydrophoneVoltageBurstCut(x,y,:) =  HydrophoneVoltage(x,y,(size(HydrophoneVoltage,3)-NSamples+1):end);% 3617 car on coupe les 3616 premiers échantillons car ce n'est que du
+            HydrophoneVoltageBurstCut(x,y,:) =  HydrophoneVoltage(x,y,(size(HydrophoneVoltage,3)-NSamples+1):end);% 3617 car on coupe les 3616 premiers Ã©chantillons car ce n'est que du
                 % bruit et on s'arrange pour garder une puissance de 2 comme longueur de
                 % vecteur!
             HydrophoneVoltageBurstCutvect = squeeze(HydrophoneVoltageBurstCut(x,y,:));
-            % +/- Implémentation d'une transformée de Hilbert:
+            % +/- ImplÃ©mentation d'une transformÃ©e de Hilbert:
             HydrophoneVoltageBurstVect_FFT(x,y,:) = (fft(HydrophoneVoltageBurstCutvect.*Haar)).*2;
-            HydrophoneVoltageBurstVect_FFT(x,y,1:(NSamples/2)+1)= HydrophoneVoltageBurstVect_FFT(x,y,1:(NSamples/2)+1).*0; % Partie freq neg = à 0 , permet signal analytique
-            HydrophoneVoltageBurstVect_Complex(x,y,:) = squeeze(ifft(HydrophoneVoltageBurstVect_FFT(x,y,:))).*Haar; % Vecteur imaginaire décalé dans le temps d'un quart de période = ok (cfr
+            HydrophoneVoltageBurstVect_FFT(x,y,1:(NSamples/2)+1)= HydrophoneVoltageBurstVect_FFT(x,y,1:(NSamples/2)+1).*0; % Partie freq neg = Ã  0 , permet signal analytique
+            HydrophoneVoltageBurstVect_Complex(x,y,:) = squeeze(ifft(HydrophoneVoltageBurstVect_FFT(x,y,:))).*Haar; % Vecteur imaginaire dÃ©calÃ© dans le temps d'un quart de pÃ©riode = ok (cfr
     % sin et cos quadrature) = Phaseur de S
             %FFT_Burst_Tension_Hydro_Amp_Freq_Intererst(x,y) = FFT_vecteur_Burst_Tension_Hydro(x,y,IndexFreqInterest);
         end
     end
 
-    %Recherche frequence d'intéret afin de déterminer le déphasage
+    %Recherche frequence d'intÃ©ret afin de dÃ©terminer le dÃ©phasage
     Freq_Axis(IndexFreqInterest);
-    HydrophoneVoltageBurstVect_FFT(x,y,IndexFreqInterest); % Amplitude et phase du signal à la freq voulue
-    % Calculer rapport Recu/émis pour chaque point à sauvegarder
-    % FFTPhaseshift = angle(HydrophoneVoltageBurstVect_Complex(:,:,IndexFreqInterest)./FunctionGenVoltageBurstVect_Complex(:,:,IndexFreqInterest)); %= dephasage entre émis et reçu cfr notes
+    HydrophoneVoltageBurstVect_FFT(x,y,IndexFreqInterest); % Amplitude et phase du signal Ã  la freq voulue
+    % Calculer rapport Recu/Ã©mis pour chaque point Ã  sauvegarder
+    % FFTPhaseshift = angle(HydrophoneVoltageBurstVect_Complex(:,:,IndexFreqInterest)./FunctionGenVoltageBurstVect_Complex(:,:,IndexFreqInterest)); %= dephasage entre Ã©mis et reÃ§u cfr notes
     % FFTAmplitude =  abs(HydrophoneVoltageBurstVect_Complex(:,:,IndexFreqInterest)./FunctionGenVoltageBurstVect_Complex(:,:,IndexFreqInterest));
 
     % Should compute Received/emitted, A/B * e^j*(phi2-phi1)
@@ -375,16 +375,16 @@ if ~Params.CalibrationPrototype(DfN)
     clear FunctionGenVoltageBurstCut FunctionGenVoltageBurstVect_Complex HydrophoneVoltageBurstCut HydrophoneVoltageBurstVect_Complex Freq_Axis NSamples ComplexRatio FunctionGenVoltageBurstVect_FFT HydrophoneVoltageBurstVect_FFT
 end
 disp('5 : FFT analysis done, data saved')
-%% 6 : Calcul des différents paramètres nécessaires pour la caractérisation d'un champs d'ultrasons
+%% 6 : Calcul des diffÃ©rents paramÃ¨tres nÃ©cessaires pour la caractÃ©risation d'un champs d'ultrasons
 if Params.CalibrationPrototype(DfN)
     for j=1:size(HydrophoneVoltage,1)
-        % Découpage du signal afin de ne garder que le Burst
+        % DÃ©coupage du signal afin de ne garder que le Burst
         InitBurst = HydrophonePeakCycle(j,1);
         if InitBurst==0
             InitBurst=1;
         end
         EndBurst = HydrophonePeakCycle(j,1)+ceil((Params.NumberOfCycles(DfN)*UltrasoundBurstPeriod*Params.SamplingFrequency(DfN)));
-        BurstHydrophone(j,:) = ((HydrophoneVoltage_Corr(j,InitBurst:EndBurst)).*1000000)./Params.HydrophoneSensitivity(DfN); %% Attention facteur d'échelle % * 1000000 pour passer en µV /0.99 pour avoir des Pa
+        BurstHydrophone(j,:) = ((HydrophoneVoltage_Corr(j,InitBurst:EndBurst)).*1000000)./Params.HydrophoneSensitivity(DfN); %% Attention facteur d'Ã©chelle % * 1000000 pour passer en ÂµV /0.99 pour avoir des Pa
         TimeVector_BurstHydrophone(j,:) = FunctionGenTimeVector(j,InitBurst:EndBurst);
         PeakPressure(j,:) = max(BurstHydrophone(j,end-200:end));
         PtPPressure(j,:) = max(BurstHydrophone(j,end-200:end))-min(BurstHydrophone(j,end-200:end));
@@ -414,11 +414,11 @@ if Params.CalibrationPrototype(DfN)
 else
     for x=1:size(v,1)
         for y=1:size(v,2)
-            % Découpage du signal afin de ne garder que le Burst
+            % DÃ©coupage du signal afin de ne garder que le Burst
             InitBurst = HydrophonePeakCycle(x,y,:)-ceil((0.5*UltrasoundBurstPeriod*Params.SamplingFrequency(DfN)));
             EndBurst = HydrophonePeakCycle(x,y,:)+ceil((Params.NumberOfCycles(DfN)*UltrasoundBurstPeriod*Params.SamplingFrequency(DfN)));
             A(x,y,:) = size([InitBurst:EndBurst],2);
-            BurstHydrophone(x,y,:) = ((HydrophoneVoltage_Corr(x,y,InitBurst:EndBurst)).*1000000)./Params.HydrophoneSensitivity(DfN); %% Attention facteur d'échelle % * 1000000 pour passer en µV /0.99 pour avoir des Pa
+            BurstHydrophone(x,y,:) = ((HydrophoneVoltage_Corr(x,y,InitBurst:EndBurst)).*1000000)./Params.HydrophoneSensitivity(DfN); %% Attention facteur d'Ã©chelle % * 1000000 pour passer en ÂµV /0.99 pour avoir des Pa
             TimeVector_BurstHydrophone(x,y,:) = FunctionGenTimeVector(x,y,InitBurst:EndBurst);
             PeakPressure(x,y) = max(BurstHydrophone(x,y,round(length(BurstHydrophone(x,y,:))/2):end));
 %             PtPPressure(x,y) = max(BurstHydrophone(x,y,round(length(BurstHydrophone(x,y,:))/2):end))-min(BurstHydrophone(x,y,round(length(BurstHydrophone(x,y,:))/2)));
@@ -433,36 +433,36 @@ else
         IpaEffectiveNormalized = IpaEffective./IsppaEffective;
         PeakPressureNormalized = PeakPressure./max(max(PeakPressure(:,1:size(PeakPressure,2)-5)));
         [PeakPressureXcoord, PeakPressureYcoord] = find(PeakPressure==max(max(PeakPressure(:,1:end-5))));
-        disp(['La valeur max du PeakPressure est de : ' num2str(max(max(PeakPressure(:,1:end-5)))) ' et est postionné au point : ' num2str(PeakPressureXcoord) ' ' num2str(PeakPressureYcoord)])
+        disp(['La valeur max du PeakPressure est de : ' num2str(max(max(PeakPressure(:,1:end-5)))) ' et est postionnÃ© au point : ' num2str(PeakPressureXcoord) ' ' num2str(PeakPressureYcoord)])
         [IsppaEffXcoord, IsppaEffYcoord] = find(IpaEffective==max(max(IpaEffective(:,1:end-5))));
-        disp(['La valeur max de l Isppa effective est de : ' num2str(max(max(IpaEffective(:,1:end-5)))) ' et est postionné au point : ' num2str(IsppaEffXcoord) ' ' num2str(IsppaEffYcoord)])
+        disp(['La valeur max de l Isppa effective est de : ' num2str(max(max(IpaEffective(:,1:end-5)))) ' et est postionnÃ© au point : ' num2str(IsppaEffXcoord) ' ' num2str(IsppaEffYcoord)])
         [IsppaXcoord, IsppaYcoord] = find(Ipa==max(max(Ipa(:,1:end-5))));
-        disp(['La valeur max de l Isppa est de : ' num2str(max(max(Ipa(:,1:end-5)))) ' et est postionné au point : ' num2str(IsppaXcoord) ' ' num2str(IsppaYcoord)])
+        disp(['La valeur max de l Isppa est de : ' num2str(max(max(Ipa(:,1:end-5)))) ' et est postionnÃ© au point : ' num2str(IsppaXcoord) ' ' num2str(IsppaYcoord)])
         [IsptaXcoord, IsptaYcoord] = find(Ita==max(max(Ita(:,1:end-5))));
-        disp(['La valeur max de l Ispta est de : ' num2str(max(max(Ita(:,1:end-5)))) ' et est postionné au point : ' num2str(IsptaXcoord) ' ' num2str(IsptaYcoord)])
+        disp(['La valeur max de l Ispta est de : ' num2str(max(max(Ita(:,1:end-5)))) ' et est postionnÃ© au point : ' num2str(IsptaXcoord) ' ' num2str(IsptaYcoord)])
         [MIXcoord, MIYcoord] = find(MI==max(max(MI(:,1:end-5))));
-        disp(['La valeur max du MI est de : ' num2str(max(max(MI(:,1:end-5)))) ' et est postionné au point : ' num2str(MIXcoord) ' ' num2str(MIYcoord)])
+        disp(['La valeur max du MI est de : ' num2str(max(max(MI(:,1:end-5)))) ' et est postionnÃ© au point : ' num2str(MIXcoord) ' ' num2str(MIYcoord)])
         [PIIXcoord, PIIYcoord] = find(PII==max(max(PII(:,1:end-5))));
-        disp(['La valeur max du PII est de : ' num2str(max(max(PII(:,1:end-5)))) ' et est postionné au point : ' num2str(PIIXcoord) ' ' num2str(PIIYcoord)])
+        disp(['La valeur max du PII est de : ' num2str(max(max(PII(:,1:end-5)))) ' et est postionnÃ© au point : ' num2str(PIIXcoord) ' ' num2str(PIIYcoord)])
     else
         IsppaEffective = max(max(IpaEffective(:,1:size(IpaEffective,2)-10)));
         IpaEffectiveNormalized = IpaEffective./IsppaEffective;
         PeakPressureNormalized = PeakPressure./max(max(PeakPressure(:,1:size(PeakPressure,2)-10)));
         [PeakPressureXcoord, PeakPressureYcoord] = find(PeakPressure==max(max(PeakPressure(:,1:end-10))));
-        disp(['La valeur max du PeakPressure est de : ' num2str(max(max(PeakPressure(:,1:end-10)))) ' et est postionné au point : ' num2str(PeakPressureXcoord) ' ' num2str(PeakPressureYcoord)])
+        disp(['La valeur max du PeakPressure est de : ' num2str(max(max(PeakPressure(:,1:end-10)))) ' et est postionnÃ© au point : ' num2str(PeakPressureXcoord) ' ' num2str(PeakPressureYcoord)])
         [IsppaEffXcoord, IsppaEffYcoord] = find(IpaEffective==max(max(IpaEffective(:,1:end-10))));
-        disp(['La valeur max de l Isppa effective est de : ' num2str(max(max(IpaEffective(:,1:end-10)))) ' et est postionné au point : ' num2str(IsppaEffXcoord) ' ' num2str(IsppaEffYcoord)])
+        disp(['La valeur max de l Isppa effective est de : ' num2str(max(max(IpaEffective(:,1:end-10)))) ' et est postionnÃ© au point : ' num2str(IsppaEffXcoord) ' ' num2str(IsppaEffYcoord)])
         [IsppaXcoord, IsppaYcoord] = find(Ipa==max(max(Ipa(:,1:end-10))));
-        disp(['La valeur max de l Isppa est de : ' num2str(max(max(Ipa(:,1:end-10)))) ' et est postionné au point : ' num2str(IsppaXcoord) ' ' num2str(IsppaYcoord)])
+        disp(['La valeur max de l Isppa est de : ' num2str(max(max(Ipa(:,1:end-10)))) ' et est postionnÃ© au point : ' num2str(IsppaXcoord) ' ' num2str(IsppaYcoord)])
         [IsptaXcoord, IsptaYcoord] = find(Ita==max(max(Ita(:,1:end-10))));
-        disp(['La valeur max de l Ispta est de : ' num2str(max(max(Ita(:,1:end-10)))) ' et est postionné au point : ' num2str(IsptaXcoord) ' ' num2str(IsptaYcoord)])
+        disp(['La valeur max de l Ispta est de : ' num2str(max(max(Ita(:,1:end-10)))) ' et est postionnÃ© au point : ' num2str(IsptaXcoord) ' ' num2str(IsptaYcoord)])
         [MIXcoord, MIYcoord] = find(MI==max(max(MI(:,1:end-10))));
-        disp(['La valeur max du MI est de : ' num2str(max(max(MI(:,1:end-10)))) ' et est postionné au point : ' num2str(MIXcoord) ' ' num2str(MIYcoord)])
+        disp(['La valeur max du MI est de : ' num2str(max(max(MI(:,1:end-10)))) ' et est postionnÃ© au point : ' num2str(MIXcoord) ' ' num2str(MIYcoord)])
         [PIIXcoord, PIIYcoord] = find(PII==max(max(PII(:,1:end-10))));
-        disp(['La valeur max du PII est de : ' num2str(max(max(PII(:,1:end-10)))) ' et est postionné au point : ' num2str(PIIXcoord) ' ' num2str(PIIYcoord)])
+        disp(['La valeur max du PII est de : ' num2str(max(max(PII(:,1:end-10)))) ' et est postionnÃ© au point : ' num2str(PIIXcoord) ' ' num2str(PIIYcoord)])
     end
     [IpaEffectiveNormalizedXcoord, IpaEffectiveNormalizedYcoord] = find(IpaEffectiveNormalized==1);
-    % Calcul de la position max pour chacun des paramètres afin de définir la
+    % Calcul de la position max pour chacun des paramÃ¨tres afin de dÃ©finir la
     % distance focale
     for x=1:size(v,1)
         for y=1:size(v,2)
@@ -528,7 +528,7 @@ else
     FocalPointX=Xvector(PeakPressureXcoord);
     FocalPointY=Params.Yend(DfN)-Yvector(PeakPressureYcoord)+Params.DistanceHydroTr(DfN);
     IpaEffective = IpaEffective/10000;
-    Ipa = Ipa/10000; %Divided by 10000 to convert data from W/m² to W/cm²
+    Ipa = Ipa/10000; %Divided by 10000 to convert data from W/mÂ² to W/cmÂ²
     Ita = Ita/10000;
 end
 disp('6 : Computation of the exposure indices done')
