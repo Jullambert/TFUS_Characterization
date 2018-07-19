@@ -473,22 +473,7 @@ else
            end
         end
     end
-%     for x= 1:size(v,1)
-%         if cumsum(FWHM(x,:))==0
-%             FWHMRow(x) = 0;
-%         else
-%             FWHMRow(x) = find(FWHM(x,:),1);
-%         end
-%     end
-%     for y= 1:size(v,2)
-%         if cumsum(FWHM(:,y))==0
-%             FWHMCol(y) = 0;
-%         else
-%             FWHMCol(y) = find(FWHM(:,y),1);
-%         end
-%     end
-%     FWHMWidth = find(FWHMRow>0,1,'last') - find(FWHMRow>0,1,'first') + 1;
-%     FWHMLength = find(FWHMCol>0,1,'last') - find(FWHMCol>0,1,'first') + 1;
+
     FWHMWidth = sum(FWHM(:,PeakPressureYcoord));
     FWHMLength = sum(FWHM(PeakPressureXcoord,:));
  
