@@ -14,7 +14,7 @@ clear all
 %% 1: Import of the parameters
 % Parameters for the analysis are stored in an Excel file
 Params=readtable('D:\data\jlambert\TFUS_Mesures_Welcome\AnalysisParameters.xlsx');
-DfN = 1; %  the row number to analyze which correspond to a file
+DfN = 290; %  the row number to analyze which correspond to a file
 disp('1 : Parameters imported')
 %% 2: Initialization of the variables
 %Stimulation parameters
@@ -86,7 +86,7 @@ if ~Params.CalibrationPrototype(DfN)
     IsptaDistanceDerating = zeros(length(Xvector),length(Yvector)); % Distance en [mm]
     IsptaDerated = zeros(length(Xvector),length(Yvector));
 
-    % Calcul Ispta derated
+    % Calcul MI derated
     MIXDistance = zeros(length(Xvector),length(Yvector)); % Distance en [mm]
     MIYDistance = zeros(length(Xvector),length(Yvector)); % Distance en [mm]
     MIDistanceDerating = zeros(length(Xvector),length(Yvector)); % Distance en [mm]
@@ -111,37 +111,41 @@ disp('2 : Initialization of the variables done')
 %% 3: Import data to analyze
 if Params.CalibrationPrototype(DfN)
     if isempty(strfind(Params.DataFilename{DfN},'.mat')) % if reference to a folder that was not yet analyzed
-        dir(strcat(Params.DataFilename{DfN},'*.tdms'))
+        disp('Beginning to importa data')
+%         dir(strcat(Params.DataFilename{DfN},'.tdms'))
         cd(Params.DataFilename{DfN})
+        DataFilesName = dir(Params.DataFilename{DfN});
+        DataFilesName(1:2) = []; % delete . and .
         NameFile = {};
+        for i=1:length(DataFilesName)
+            filename = fullfile(Params.DataFilename{DfN},DataFilesName(i).name);
+            NameFile{i,1} = filename;
+        end;
         % Boucle pour trier par ordre numérique des différents "Steps" de mesure les fichiers contenus dans le dossier pointer par RootDir
-            for i=1:length(DataFilesName)
-                filename = fullfile(RootDir,DataFilesName(i).name);
-                NameFile{i,1} = filename;
-                st=NameFile{ii};
-                strinit=['_' num2str(Params.DistanceHydroTr(DfN)) '_']; 
-                idx=strfind(st,strinit)+4;
-                idx2=strfind(st,'.tdms')-1;
-                stval(ii)=str2num(st(idx:idx2));
-                [a,b]=sort(stval);
-            end;
+        for ii=1:length(DataFilesName)
+            st=NameFile{ii};
+            idx=strfind(st,'Num_Step_')+9;
+            idx2=strfind(st,'X_Coordinate')-1;
+            stval(ii)=str2num(st(idx:idx2));
+            [a,b]=sort(stval);
+        end;
         NameFile2=NameFile(b);
         %Loop to import data
-            for j=1:length(NameFile2)
-                    if Params.PXI(DfN)
-                        [finalOutput,metaStruct] = TDMS_readTDMSFile(NameFile2{j,1});
-                        FunctionGenVoltage(j,1:length(finalOutput.data{:,3})) = finalOutput.data{:,3};
-                        HydrophoneVoltage(j,1:length(finalOutput.data{:,4})) = finalOutput.data{:,4};
-                        DeltaT = finalOutput.propValues{1,3}{1,3};
-                        FunctionGenTimeVector(j,1:length(finalOutput.data{:,3})) = (0:DeltaT(1):(length(FunctionGenVoltage(x,y,:))-1)*DeltaT(1));
-                        MatrixNameFile{j,:}=NameFile2{j,1};  
-                    clear finalOutput
-                    clear metaStruct
-                    else
-                        [finalOutput,metaStruct] = TDMS_readTDMSFile(NameFile2{j,1});
-                        HydrophoneVoltage(j,1:length(finalOutput.data{:,4})) = finalOutput.data{:,3};
-                    end
-            end
+        for j=1:length(NameFile2)
+                if Params.PXI(DfN)
+                    [finalOutput,metaStruct] = TDMS_readTDMSFile(NameFile2{j,1});
+                    FunctionGenVoltage(j,1:length(finalOutput.data{:,3})) = finalOutput.data{:,3};
+                    HydrophoneVoltage(j,1:length(finalOutput.data{:,4})) = finalOutput.data{:,4};
+                    DeltaT = finalOutput.propValues{1,3}{1,3};
+                    FunctionGenTimeVector(j,1:length(finalOutput.data{:,3})) = (0:DeltaT(1):(length(FunctionGenVoltage(x,y,:))-1)*DeltaT(1));
+                    FilenameMatrix{j,:}=NameFile2{j,1};  
+                clear finalOutput
+                clear metaStruct
+                else
+                    [finalOutput,metaStruct] = TDMS_readTDMSFile(NameFile2{j,1});
+                    HydrophoneVoltage(j,1:length(finalOutput.data{:,4})) = finalOutput.data{:,3};
+                end
+        end
     else % condition for loading data from files that were already analyzed
         if Params.PXI(DfN)
             load(Params.DataFilename{DfN},'Tension_FunctionGen','Tension_Hydrophone','VecteurTemps_FunctionGen','listing2') 
@@ -172,21 +176,24 @@ if Params.CalibrationPrototype(DfN)
    
 else
     if isempty(strfind(Params.DataFilename{DfN},'.mat')) % if reference to a folder that was not yet analyzed
-        dir(strcat(Params.DataFilename{DfN},'*.tdms'))
+        disp('Beginning to importa data from folder')
+%         dir(strcat(Params.DataFilename{DfN},'.tdms'))
         cd(Params.DataFilename{DfN})
+        DataFilesName = dir(Params.DataFilename{DfN});
+        DataFilesName(1:2) = []; % delete . and .
         NameFile = {};
+        for i=1:length(DataFilesName)
+            filename = fullfile(Params.DataFilename{DfN},DataFilesName(i).name);
+            NameFile{i,1} = filename;
+        end;
         % Boucle pour trier par ordre numérique des différents "Steps" de mesure les fichiers contenus dans le dossier pointer par RootDir
-            for i=1:length(DataFilesName)
-                filename = fullfile(RootDir,DataFilesName(i).name);
-                NameFile{i,1} = filename;
-            end
-            for ii=1:length(DataFilesName)
-                st=NameFile{ii};
-                idx=strfind(st,'Num_Step_')+9;
-                idx2=strfind(st,'X_Coordinate')-1;
-                stval(ii)=str2num(st(idx:idx2));
-                [a,b]=sort(stval);
-            end;
+        for ii=1:length(DataFilesName)
+            st=NameFile{ii};
+            idx=strfind(st,'Num_Step_')+9;
+            idx2=strfind(st,'X_Coordinate')-1;
+            stval(ii)=str2num(st(idx:idx2));
+            [a,b]=sort(stval);
+        end;
         NameFile2=NameFile(b);
         %Loop to import data
             for x=1:size(v,1)
@@ -199,7 +206,7 @@ else
                         HydrophoneVoltage(x,y,1:length(finalOutput.data{:,4})) = finalOutput.data{:,4};
                         DeltaT = finalOutput.propValues{1,3}{1,3};
                         FunctionGenTimeVector(x,y,1:length(finalOutput.data{:,3})) = (0:DeltaT(1):(length(FunctionGenVoltage(x,y,:))-1)*DeltaT(1));
-                        MatrixNameFile{x,y,:}=NameFile2{v(x,y)};  
+                        FilenameMatrix{x,y,:}=NameFile2{v(x,y)};  
                     clear finalOutput
                     clear metaStruct
                     else
@@ -216,7 +223,7 @@ else
                         FunctionGenVoltage(x,y,1:length(A.Volt0)) = A.Volt0;
                         HydrophoneVoltage(x,y,1:length(A.Volt1)) = A.Volt1;
                         FunctionGenTimeVector(x,y,1:length(A.Volt0)) = (0:DeltaT(1):(length(FunctionGenVoltage(x,y,:))-1)*DeltaT(1));
-                        MatrixNameFile{x,y,:}=NameFile2{v(x,y)};     
+                        FilenameMatrix{x,y,:}=NameFile2{v(x,y)};     
                         clear A
                         fclose(fid);
                     end
@@ -308,7 +315,7 @@ else
 %             [FunctionGenR,FunctionGenLT,FunctionGenUT,FunctionGenLL,FunctionGenUL] = risetime(squeeze(FunctionGenVoltage_Corr_Filtered(x,y,:)),squeeze(FunctionGenTimeVector(x,y,:)));%Params.SamplingFrequency(DfN)
 %             [FunctionGenR2,FunctionGenLT2,FunctionGenUT2,FunctionGenLL2,FunctionGenUL2] = falltime(squeeze(FunctionGenVoltage_Corr_Filtered(x,y,:)),squeeze(FunctionGenTimeVector(x,y,:)));
 %
-% Second method aimed to detetc precisely the onset and offset of the whole
+% Second method aimed to detect precisely the onset and offset of the whole
 % burst and not to cut the burst according to the stimulation paramters set
 % on the function generator. So to be more close to ebaluate exposure indices 
 % with the true burst generated and so sent to the targeted brain area. 
@@ -400,7 +407,10 @@ if Params.CalibrationPrototype(DfN)
     MIXcoord=0;
     MIYcoord=0;
     FocalPointX=0;
-    FocalPointY=Params.DistanceHydroTr;
+    FocalPointY=Params.DistanceHydroTr(DfN);
+    FWHMWidth = 0;
+    FWHMLength = 0;
+
 else
     for x=1:size(v,1)
         for y=1:size(v,2)
@@ -421,49 +431,67 @@ else
     if Params.SkullBone(DfN)
         IsppaEffective = max(max(IpaEffective(:,1:size(IpaEffective,2)-5)));
         IpaEffectiveNormalized = IpaEffective./IsppaEffective;
-        PtPPressureNormalized = PtPPressure./max(max(PtPPressure(:,1:size(PtPPressure,2)-5)));
+        PeakPressureNormalized = PeakPressure./max(max(PeakPressure(:,1:size(PeakPressure,2)-5)));
+        [PeakPressureXcoord, PeakPressureYcoord] = find(PeakPressure==max(max(PeakPressure(:,1:end-5))));
+        disp(['La valeur max du PeakPressure est de : ' num2str(max(max(PeakPressure(:,1:end-5)))) ' et est postionné au point : ' num2str(PeakPressureXcoord) ' ' num2str(PeakPressureYcoord)])
+        [IsppaEffXcoord, IsppaEffYcoord] = find(IpaEffective==max(max(IpaEffective(:,1:end-5))));
+        disp(['La valeur max de l Isppa effective est de : ' num2str(max(max(IpaEffective(:,1:end-5)))) ' et est postionné au point : ' num2str(IsppaEffXcoord) ' ' num2str(IsppaEffYcoord)])
+        [IsppaXcoord, IsppaYcoord] = find(Ipa==max(max(Ipa(:,1:end-5))));
+        disp(['La valeur max de l Isppa est de : ' num2str(max(max(Ipa(:,1:end-5)))) ' et est postionné au point : ' num2str(IsppaXcoord) ' ' num2str(IsppaYcoord)])
+        [IsptaXcoord, IsptaYcoord] = find(Ita==max(max(Ita(:,1:end-5))));
+        disp(['La valeur max de l Ispta est de : ' num2str(max(max(Ita(:,1:end-5)))) ' et est postionné au point : ' num2str(IsptaXcoord) ' ' num2str(IsptaYcoord)])
+        [MIXcoord, MIYcoord] = find(MI==max(max(MI(:,1:end-5))));
+        disp(['La valeur max du MI est de : ' num2str(max(max(MI(:,1:end-5)))) ' et est postionné au point : ' num2str(MIXcoord) ' ' num2str(MIYcoord)])
+        [PIIXcoord, PIIYcoord] = find(PII==max(max(PII(:,1:end-5))));
+        disp(['La valeur max du PII est de : ' num2str(max(max(PII(:,1:end-5)))) ' et est postionné au point : ' num2str(PIIXcoord) ' ' num2str(PIIYcoord)])
     else
         IsppaEffective = max(max(IpaEffective(:,1:size(IpaEffective,2)-10)));
         IpaEffectiveNormalized = IpaEffective./IsppaEffective;
-        PtPPressureNormalized = PtPPressure./max(max(PtPPressure(:,1:size(PtPPressure,2)-10)));
+        PeakPressureNormalized = PeakPressure./max(max(PeakPressure(:,1:size(PeakPressure,2)-10)));
+        [PeakPressureXcoord, PeakPressureYcoord] = find(PeakPressure==max(max(PeakPressure(:,1:end-10))));
+        disp(['La valeur max du PeakPressure est de : ' num2str(max(max(PeakPressure(:,1:end-10)))) ' et est postionné au point : ' num2str(PeakPressureXcoord) ' ' num2str(PeakPressureYcoord)])
+        [IsppaEffXcoord, IsppaEffYcoord] = find(IpaEffective==max(max(IpaEffective(:,1:end-10))));
+        disp(['La valeur max de l Isppa effective est de : ' num2str(max(max(IpaEffective(:,1:end-10)))) ' et est postionné au point : ' num2str(IsppaEffXcoord) ' ' num2str(IsppaEffYcoord)])
+        [IsppaXcoord, IsppaYcoord] = find(Ipa==max(max(Ipa(:,1:end-10))));
+        disp(['La valeur max de l Isppa est de : ' num2str(max(max(Ipa(:,1:end-10)))) ' et est postionné au point : ' num2str(IsppaXcoord) ' ' num2str(IsppaYcoord)])
+        [IsptaXcoord, IsptaYcoord] = find(Ita==max(max(Ita(:,1:end-10))));
+        disp(['La valeur max de l Ispta est de : ' num2str(max(max(Ita(:,1:end-10)))) ' et est postionné au point : ' num2str(IsptaXcoord) ' ' num2str(IsptaYcoord)])
+        [MIXcoord, MIYcoord] = find(MI==max(max(MI(:,1:end-10))));
+        disp(['La valeur max du MI est de : ' num2str(max(max(MI(:,1:end-10)))) ' et est postionné au point : ' num2str(MIXcoord) ' ' num2str(MIYcoord)])
+        [PIIXcoord, PIIYcoord] = find(PII==max(max(PII(:,1:end-10))));
+        disp(['La valeur max du PII est de : ' num2str(max(max(PII(:,1:end-10)))) ' et est postionné au point : ' num2str(PIIXcoord) ' ' num2str(PIIYcoord)])
     end
     [IpaEffectiveNormalizedXcoord, IpaEffectiveNormalizedYcoord] = find(IpaEffectiveNormalized==1);
-    [PtPPressureNormalizedXcoord, PtPPressureNormalizedYcoord] = find(PtPPressureNormalized==1);
-%     for x=1:size(v,1)
-%         for y=1:size(v,2)
-%            if IpaEffectiveNormalized(x,y) >= 0.5
-%                FWHM(x,y) = 1;
-%            else
-%                FWHM(x,y) = 0;
-%            end
-%         end
-%     end
+    % Calcul de la position max pour chacun des paramètres afin de définir la
+    % distance focale
     for x=1:size(v,1)
         for y=1:size(v,2)
-           if PtPPressureNormalized(x,y) >= 0.5
+           if PeakPressureNormalized(x,y) >= 0.5
                FWHM(x,y) = 1;
            else
                FWHM(x,y) = 0;
            end
         end
     end
-    for x= 1:size(v,1)
-        if cumsum(FWHM(x,:))==0
-            FWHMRow(x) = 0;
-        else
-            FWHMRow(x) = find(FWHM(x,:),1);
-        end
-    end
-    for y= 1:size(v,2)
-        if cumsum(FWHM(:,y))==0
-            FWHMCol(y) = 0;
-        else
-            FWHMCol(y) = find(FWHM(:,y),1);
-        end
-    end
-    FWHMWidth = find(FWHMRow>0,1,'last') - find(FWHMRow>0,1,'first') + 1;
-    FWHMLength = find(FWHMCol>0,1,'last') - find(FWHMCol>0,1,'first') + 1;
-
+%     for x= 1:size(v,1)
+%         if cumsum(FWHM(x,:))==0
+%             FWHMRow(x) = 0;
+%         else
+%             FWHMRow(x) = find(FWHM(x,:),1);
+%         end
+%     end
+%     for y= 1:size(v,2)
+%         if cumsum(FWHM(:,y))==0
+%             FWHMCol(y) = 0;
+%         else
+%             FWHMCol(y) = find(FWHM(:,y),1);
+%         end
+%     end
+%     FWHMWidth = find(FWHMRow>0,1,'last') - find(FWHMRow>0,1,'first') + 1;
+%     FWHMLength = find(FWHMCol>0,1,'last') - find(FWHMCol>0,1,'first') + 1;
+    FWHMWidth = sum(FWHM(:,PeakPressureYcoord));
+    FWHMLength = sum(FWHM(PeakPressureXcoord,:));
+ 
     figure
     imagesc(FWHM)
     title(strcat('FWHM ',num2str(Params.UltrasoundBurstFrequency(DfN)/1000),'kHz _',num2str(Params.VppFunGen(DfN)),'Vpp' ))
@@ -495,64 +523,36 @@ else
     fignameMI = strcat('MI_',Params.SessionName(DfN),'_',num2str(Params.NumberOfCycles(DfN)),'Cycles',num2str(Params.UltrasoundBurstFrequency(DfN)/1000),'kHz');
     savefig(fignameMI{1})
 
-    % Calcul de la position max pour chacun des paramètres afin de définir la
-    % distance focale
-    if Params.SkullBone(DfN)
-        [PeakPressureXcoord, PeakPressureYcoord] = find(PeakPressure==max(max(PeakPressure(:,1:end-5))));
-        disp(['La valeur max du PeakPressure est de : ' num2str(max(max(PeakPressure(:,1:end-5)))) ' et est postionné au point : ' num2str(PeakPressureXcoord) ' ' num2str(PeakPressureYcoord)])
-        [IsppaEffXcoord, IsppaEffYcoord] = find(IpaEffective==max(max(IpaEffective(:,1:end-5))));
-        disp(['La valeur max de l Isppa effective est de : ' num2str(max(max(IpaEffective(:,1:end-5)))) ' et est postionné au point : ' num2str(IsppaEffXcoord) ' ' num2str(IsppaEffYcoord)])
-        [IsppaXcoord, IsppaYcoord] = find(Ipa==max(max(Ipa(:,1:end-5))));
-        disp(['La valeur max de l Isppa est de : ' num2str(max(max(Ipa(:,1:end-5)))) ' et est postionné au point : ' num2str(IsppaXcoord) ' ' num2str(IsppaYcoord)])
-        [IsptaXcoord, IsptaYcoord] = find(Ita==max(max(Ita(:,1:end-5))));
-        disp(['La valeur max de l Ispta est de : ' num2str(max(max(Ita(:,1:end-5)))) ' et est postionné au point : ' num2str(IsptaXcoord) ' ' num2str(IsptaYcoord)])
-        [MIXcoord, MIYcoord] = find(MI==max(max(MI(:,1:end-5))));
-        disp(['La valeur max du MI est de : ' num2str(max(max(MI(:,1:end-5)))) ' et est postionné au point : ' num2str(MIXcoord) ' ' num2str(MIYcoord)])
-        [PIIXcoord, PIIYcoord] = find(PII==max(max(PII(:,1:end-5))));
-        disp(['La valeur max du PII est de : ' num2str(max(max(PII(:,1:end-5)))) ' et est postionné au point : ' num2str(PIIXcoord) ' ' num2str(PIIYcoord)])
-    else
-        [PeakPressureXcoord, PeakPressureYcoord] = find(PeakPressure==max(max(PeakPressure(:,1:end-10))));
-        disp(['La valeur max du PeakPressure est de : ' num2str(max(max(PeakPressure(:,1:end-10)))) ' et est postionné au point : ' num2str(PeakPressureXcoord) ' ' num2str(PeakPressureYcoord)])
-        [IsppaEffXcoord, IsppaEffYcoord] = find(IpaEffective==max(max(IpaEffective(:,1:end-10))));
-        disp(['La valeur max de l Isppa effective est de : ' num2str(max(max(IpaEffective(:,1:end-10)))) ' et est postionné au point : ' num2str(IsppaEffXcoord) ' ' num2str(IsppaEffYcoord)])
-        [IsppaXcoord, IsppaYcoord] = find(Ipa==max(max(Ipa(:,1:end-10))));
-        disp(['La valeur max de l Isppa est de : ' num2str(max(max(Ipa(:,1:end-10)))) ' et est postionné au point : ' num2str(IsppaXcoord) ' ' num2str(IsppaYcoord)])
-        [IsptaXcoord, IsptaYcoord] = find(Ita==max(max(Ita(:,1:end-10))));
-        disp(['La valeur max de l Ispta est de : ' num2str(max(max(Ita(:,1:end-10)))) ' et est postionné au point : ' num2str(IsptaXcoord) ' ' num2str(IsptaYcoord)])
-        [MIXcoord, MIYcoord] = find(MI==max(max(MI(:,1:end-10))));
-        disp(['La valeur max du MI est de : ' num2str(max(max(MI(:,1:end-10)))) ' et est postionné au point : ' num2str(MIXcoord) ' ' num2str(MIYcoord)])
-        [PIIXcoord, PIIYcoord] = find(PII==max(max(PII(:,1:end-10))));
-        disp(['La valeur max du PII est de : ' num2str(max(max(PII(:,1:end-10)))) ' et est postionné au point : ' num2str(PIIXcoord) ' ' num2str(PIIYcoord)])
-    end
 
-    FocalPointX=ceil(length(Xvector)/2)-PeakPressureXcoord;
-    FocalPointY=length(Yvector)-PeakPressureYcoord+Params.DistanceHydroTr(DfN);
+
+    FocalPointX=Xvector(PeakPressureXcoord);
+    FocalPointY=Params.Yend(DfN)-Yvector(PeakPressureYcoord)+Params.DistanceHydroTr(DfN);
     IpaEffective = IpaEffective/10000;
     Ipa = Ipa/10000; %Divided by 10000 to convert data from W/m² to W/cm²
     Ita = Ita/10000;
 end
 disp('6 : Computation of the exposure indices done')
-%%
+%% 7 : Saving the data relative to the characterisation of the beam profile
 [a,b,c]=xlsread('D:\data\jlambert\TFUS_Mesures_Welcome\AnalysisParameters.xlsx','Output');
 if Params.CalibrationPrototype(DfN)
     for w=1:size(HydrophoneVoltage,1)
     Results={Params.DataFilename{DfN},PeakPressure(w),PeakPressureXcoord, PeakPressureYcoord,IpaEffective(w),...
         IsppaEffXcoord, IsppaEffYcoord,Ipa(w),IsppaXcoord, IsppaYcoord,Ita(w),IsptaXcoord, ...
-        IsptaYcoord,MI((w)),MIXcoord, MIYcoord,FocalPointX,FocalPointY};
+        IsptaYcoord,MI((w)),MIXcoord, MIYcoord,FocalPointX,FocalPointY,FWHMWidth,FWHMLength};
     Range = ['A' num2str(size(c,1)+1+w-1)];
     xlswrite('D:\data\jlambert\TFUS_Mesures_Welcome\AnalysisParameters.xlsx',Results,'Output',Range)
     end
 else
-    if Params.Skullbone(DfN)
+    if Params.SkullBone(DfN)
         Results={Params.DataFilename{DfN},max(max(PeakPressure(:,1:end-5))),PeakPressureXcoord, PeakPressureYcoord,max(max(IpaEffective(:,1:end-5))),...
             IsppaEffXcoord, IsppaEffYcoord,max(max(Ipa(:,1:end-5))),IsppaXcoord, IsppaYcoord,max(max(Ita(:,1:end-5))),IsptaXcoord, ...
-            IsptaYcoord,max(max(MI(:,1:end-5))),MIXcoord, MIYcoord,FocalPointX,FocalPointY};
+            IsptaYcoord,max(max(MI(:,1:end-5))),MIXcoord, MIYcoord,FocalPointX,FocalPointY,FWHMWidth,FWHMLength};
         Range = ['A' num2str(size(c,1)+1)];
         xlswrite('D:\data\jlambert\TFUS_Mesures_Welcome\AnalysisParameters.xlsx',Results,'Output',Range)
     else
         Results={Params.DataFilename{DfN},max(max(PeakPressure(:,1:end-10))),PeakPressureXcoord, PeakPressureYcoord,max(max(IpaEffective(:,1:end-10))),...
             IsppaEffXcoord, IsppaEffYcoord,max(max(Ipa(:,1:end-10))),IsppaXcoord, IsppaYcoord,max(max(Ita(:,1:end-10))),IsptaXcoord, ...
-            IsptaYcoord,max(max(MI(:,1:end-10))),MIXcoord, MIYcoord,FocalPointX,FocalPointY};
+            IsptaYcoord,max(max(MI(:,1:end-10))),MIXcoord, MIYcoord,FocalPointX,FocalPointY,FWHMWidth,FWHMLength};
         Range = ['A' num2str(size(c,1)+1)];
         xlswrite('D:\data\jlambert\TFUS_Mesures_Welcome\AnalysisParameters.xlsx',Results,'Output',Range)
     end
@@ -564,30 +564,36 @@ if Params.CalibrationPrototype(DfN)
          save(filename{1},'FunctionGenVoltage','HydrophoneVoltage','FunctionGenTimeVector',...
         'BurstHydrophone','HydrophonePeakValue','HydrophonePeakCycle',...
         'PeakPressure','IpaEffective','Ipa','Ita','MI','TI','PII','Params',...
-        'FocalPointX','FocalPointY'); 
+        'FocalPointX','FocalPointY','FWHMWidth','FWHMLength'); 
 else
     filename = strcat('DataCharacterisation_',Params.SessionName(DfN),'_',num2str(Params.NumberOfCycles(DfN)),'Cyc','_',num2str(Params.VppFunGen(DfN)*10),'Vpp','_',num2str(Params.UltrasoundBurstFrequency(DfN)/1000),'kHz.mat');
-    save(filename{1},'FunctionGenVoltage','HydrophoneVoltage','FunctionGenTimeVector','FilenameMatrix',...
-        'BurstHydrophone','FunctionGenPeakValue','FunctionGenPeakCycle','HydrophonePeakValue','HydrophonePeakCycle',...
-        'PeakPressure','IpaEffective','Ipa','Ita','MI','TI','PII','FWHM','Params','FocalPointX','FocalPointY','PtPPressureNormalized');
+    save(filename{1},'FunctionGenVoltage','HydrophoneVoltage','FunctionGenTimeVector',...
+        'FilenameMatrix','BurstHydrophone','FunctionGenPeakValue',...
+        'FunctionGenPeakCycle','HydrophonePeakValue','HydrophonePeakCycle',...
+        'PeakPressure','IpaEffective','Ipa','Ita','MI','TI','PII','FWHM',...
+        'Params','FocalPointX','FocalPointY','PeakPressureNormalized','FWHMWidth','FWHMLength');
 end
 
 disp('Data saved in mat file')
+
+%%
+
+
 %%
 
 
 %%
 
 %%
-figure
-subplot(2,1,1)
-plot(Freq_Axis,squeeze(abs(FunctionGenVoltageBurstVect_FFT(x,y,:))))
-
-subplot(2,1,2)
-plot(T,squeeze(FunctionGenVoltageBurstCutvect))
-hold on
-plot(T,squeeze(real(FunctionGenVoltageBurstVect_Complex(x,y,:))),'r')
-plot(T,squeeze(imag(FunctionGenVoltageBurstVect_Complex(x,y,:))),'k')
+% figure
+% subplot(2,1,1)
+% plot(Freq_Axis,squeeze(abs(FunctionGenVoltageBurstVect_FFT(x,y,:))))
+% 
+% subplot(2,1,2)
+% plot(T,squeeze(FunctionGenVoltageBurstCutvect))
+% hold on
+% plot(T,squeeze(real(FunctionGenVoltageBurstVect_Complex(x,y,:))),'r')
+% plot(T,squeeze(imag(FunctionGenVoltageBurstVect_Complex(x,y,:))),'k')
 
 figure
 subplot(2,1,1)
@@ -599,4 +605,9 @@ hold on
 plot(T,squeeze(real(HydrophoneVoltageBurstVect_Complex(x,y,:))),'r')
 plot(T,squeeze(imag(HydrophoneVoltageBurstVect_Complex(x,y,:))),'k')
 
-
+%%
+% tr_radius = 16;
+% sound_velocity = 1500;
+% fundamental_frequency=250000;
+% lambda = (sound_velocity/fundamental_frequency)*1000;%to get mm
+% last_maxima = (4*(tr_radius^2)-lambda^2)/(4*lambda)
